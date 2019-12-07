@@ -15,27 +15,48 @@ using std::stringstream;
 
 int main() {
 
-	unsigned MemCyc = 100, BSize = 5, L1Size = 16, L2Size = 20, L1Assoc = 3,
-	L2Assoc = 4, L1Cyc = 1, L2Cyc = 5, WrAlloc = 1;
+	unsigned MemCyc = 100, BSize = 0, L1Size = 0, L2Size = 20, 
+		L1Assoc = 0, L2Assoc = 4, L1Cyc = 1, L2Cyc = 5, WrAlloc = 1;
 
 
 	/*Our Code: START*/
-	cache* pL1 = new cache(pow(2, L1Size), pow(2, BSize), pow(2, L1Assoc), L1Cyc, (bool)WrAlloc);
-	cache* pL2 = new cache(pow(2, L2Size), pow(2, BSize), pow(2, L2Assoc), L2Cyc, (bool)WrAlloc);
+	cache* pL1 = new cache((int)pow(2, L1Size), (int)pow(2, BSize), (int)pow(2, L1Assoc), L1Cyc, (bool)WrAlloc , 1);
+	cache* pL2 = new cache((int)pow(2, L2Size), (int)pow(2, BSize), (int)pow(2, L2Assoc), L2Cyc, (bool)WrAlloc , 2);
 	/*Our Code: END*/
 
 
+	char operation;
+	unsigned long int address;
+	int crntTimePassed = 0;		//in clk cycles
+	int globalTimePassed = 0;  //in clk cycles
+	int cmnd_count = 0;
 
 	/* Read \ Write Requests: */
-	char operation = 'W';  // R  or  W
-	unsigned long int address = 5;
+	operation = 'w'; 
+	address = 4;
+	crntTimePassed = calc_time_and_update(pL1, pL2, address, operation, MemCyc, WrAlloc);
+	globalTimePassed += crntTimePassed;
+	cmnd_count++;
+
+
+	operation = 'r';  
+	address = 16;
+	crntTimePassed = calc_time_and_update(pL1, pL2, address, operation, MemCyc, WrAlloc);
+	globalTimePassed += crntTimePassed;
+	cmnd_count++;
+
+	operation = 'w';
+	address = 4;
+	crntTimePassed = calc_time_and_update(pL1, pL2, address, operation, MemCyc, WrAlloc);
+	globalTimePassed += crntTimePassed;
+	cmnd_count++;
+
 
 
 	/* Update those: */
-	double L1MissRate = 0;
-	double L2MissRate = 0;
-	double avgAccTime = 0;
-
+	double L1MissRate = pL1->get_missRate();
+	double L2MissRate = pL2->get_missRate();
+	double avgAccTime = ((double)globalTimePassed)/((double)cmnd_count);
 
 
 
