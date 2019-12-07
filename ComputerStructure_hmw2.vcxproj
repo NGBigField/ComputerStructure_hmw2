@@ -140,6 +140,7 @@
   <ItemGroup>
     <ClCompile Include="cache.cpp" />
     <ClCompile Include="main_test.cpp" />
+    <ClCompile Include="cacheSim.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cache.h" />

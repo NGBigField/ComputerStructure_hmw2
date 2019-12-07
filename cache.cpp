@@ -1,5 +1,6 @@
 #include "cache.h"
 #include <algorithm>
+#include <limits>
 #include <math.h>
 
 
@@ -39,18 +40,20 @@ way::way(int numBlocks_, int blockSize_)
 	is_dirty = new bool[numBlocks];
 	tags = new uli[numBlocks];
 	addresses = new uli[numBlocks];
-	
 
-	std::numeric_limits<uli> limits;
-	uli maxVal_ = limits.max();
-	uli minVal_ = limits.min();
+
+	//std::numeric_limits<uli> limits;
+	//uli maxVal_ = limits.max();
+	//uli minVal_ = limits.min();
+	uli maxVal_ = std::numeric_limits<uli>::max();
+
 
 	/*Initialize the arrays*/
 	for (int i = 0; i < numBlocks; i++)
 	{
 		blocks[i] = 0;
 		is_dirty[i] = false;
-		tags[i] = maxVal_;  
+		tags[i] = maxVal_;
 		addresses[i] = 0;
 	}
 
@@ -59,14 +62,14 @@ way::way(int numBlocks_, int blockSize_)
 
 bool way::is_exist(uli address)
 {
-	int set = address2set(address,blockSize,numBlocks);
+	int set = address2set(address, blockSize, numBlocks);
 	uli crnt_tag = tags[set];
-	return ( (crnt_tag == address2tag(address, blockSize, numBlocks)) ? true : false  ) ;
+	return ((crnt_tag == address2tag(address, blockSize, numBlocks)) ? true : false);
 }
 
-bool way::change_block(uli address , uli* pOldAddress)
+bool way::change_block(uli address, uli* pOldAddress)
 {
-	int set = address2set(address, blockSize , numBlocks);
+	int set = address2set(address, blockSize, numBlocks);
 	uli new_tag = address2tag(address, blockSize, numBlocks);
 
 	/*Before update*/
@@ -83,7 +86,7 @@ bool way::change_block(uli address , uli* pOldAddress)
 
 void way::write(uli address)
 {
-	int set = address2set(address,blockSize,numBlocks);
+	int set = address2set(address, blockSize, numBlocks);
 	is_dirty[set] = true;
 }
 
@@ -91,13 +94,13 @@ void way::write(uli address)
 
 
 /*=============================================== cache  ===============================================*/
-cache::cache(int cacheSize_, int blockSize_, int numWays_, int numCycles_, bool is_writeAllocate_ , int level_)
+cache::cache(int cacheSize_, int blockSize_, int numWays_, int numCycles_, bool is_writeAllocate_, int level_)
 {
 	//Basic Params:
-	cacheSize	= cacheSize_;
-	blockSize	= blockSize_;
-	numWays		= numWays_;
-	numCycles	= numCycles_;
+	cacheSize = cacheSize_;
+	blockSize = blockSize_;
+	numWays = numWays_;
+	numCycles = numCycles_;
 	is_writeAllocate = is_writeAllocate_;
 
 	//
@@ -107,7 +110,7 @@ cache::cache(int cacheSize_, int blockSize_, int numWays_, int numCycles_, bool 
 	/*Creat ways:*/
 	for (int i = 0; i < numWays; i++)
 	{
-		ways.push_back(new way(numBlocks_perWay, blockSize)  );
+		ways.push_back(new way(numBlocks_perWay, blockSize));
 	}
 
 
@@ -121,7 +124,7 @@ cache::cache(int cacheSize_, int blockSize_, int numWays_, int numCycles_, bool 
 		}
 		LRU.push_back(newLRUelem);
 	}
-		
+
 
 	missCount = 0;
 	accessCount = 0;
@@ -129,7 +132,7 @@ cache::cache(int cacheSize_, int blockSize_, int numWays_, int numCycles_, bool 
 
 
 
-bool cache::search_and_update(uli address, bool is_actionWrite , uli* pAddressOfDirtyData )
+bool cache::search_and_update(uli address, bool is_actionWrite, uli* pAddressOfDirtyData)
 {
 	accessCount++;
 
@@ -151,14 +154,15 @@ bool cache::search_and_update(uli address, bool is_actionWrite , uli* pAddressOf
 
 	/*Missing block  :  Must update one of the ways, if the new requested block*/
 	missCount++;
-	
-	if (!is_actionWrite   ||  is_writeAllocate)  //Read or write allocate
+
+	if (!is_actionWrite || is_writeAllocate)  //Read or write allocate
 	{
-		
-		bool is_dirty = false;
+
+		//bool is_dirty = false;
 		int way2update = LRU[setIndex].front();
 
-		is_dirty = ways[way2update]->change_block(address, pAddressOfDirtyData);
+		ways[way2update]->change_block(address, pAddressOfDirtyData);
+		//is_dirty = ways[way2update]->change_block(address, pAddressOfDirtyData);
 		update_LRU(setIndex, way2update);
 
 	}
@@ -184,7 +188,7 @@ void cache::update_LRU(int setIndex, int way2update)
 		//check something that shouldn't happen:
 		if (LRU[setIndex].empty())
 		{
-			printf("L%d::update_LRU(setIndex=%d, way2update%d)	--element not found" , this->level , setIndex , way2update);
+			//printf("L%d::update_LRU(setIndex=%d, way2update%d)	--element not found" , this->level , setIndex , way2update);
 			return;
 		}
 
@@ -216,8 +220,8 @@ int calc_time_and_update(cache* pL1, cache* pL2, uli address, char action_char, 
 	uli oldAdress = 0;
 
 	/*Search in L1*/
-	bool is_exist_L1 = pL1->search_and_update(address, is_actionWrite , &oldAdress);
-	if (is_exist_L1) 
+	bool is_exist_L1 = pL1->search_and_update(address, is_actionWrite, &oldAdress);
+	if (is_exist_L1)
 	{
 		return pL1->get_numCycles();
 	}
@@ -239,7 +243,7 @@ int calc_time_and_update(cache* pL1, cache* pL2, uli address, char action_char, 
 		}
 		else
 		{
-			return MemCyc + pL1->get_numCycles() +pL2->get_numCycles();
+			return MemCyc + pL1->get_numCycles() + pL2->get_numCycles();
 		}
 
 	}

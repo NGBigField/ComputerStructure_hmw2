@@ -11,7 +11,8 @@ using std::queue;
 using std::deque;
 
 
-typedef unsigned long int   uli; 
+typedef unsigned long int   uli;
+typedef deque<int> int_queue;
 const int ADDRESS_LENGTH = 32;
 
 
@@ -29,7 +30,7 @@ class way {
 public:
 	way(int numBlocks, int blockSize); //c'tor
 	bool is_exist(uli address);
-	bool change_block(uli address , uli* pOldAddress);  //also return if it was dirty
+	bool change_block(uli address, uli* pOldAddress);  //also return if it was dirty
 	void write(uli address);
 	//uli tag2address(int set);
 
@@ -38,7 +39,7 @@ protected:
 	int numBlocks;
 	int blockSize;
 
-	int *blocks;
+	int* blocks;
 	bool* is_dirty;
 	unsigned long int* tags;
 	uli* addresses;
@@ -49,11 +50,11 @@ protected:
 class cache {
 
 public:
-	cache(int cacheSize_ , int blockSize_ , int numWays_, int numCycles_ , bool is_writeAllocate_, int level_); //c'tor
-	bool search_and_update(uli address , bool is_actionWrite , uli* pDirtyAddress);
+	cache(int cacheSize_, int blockSize_, int numWays_, int numCycles_, bool is_writeAllocate_, int level_); //c'tor
+	bool search_and_update(uli address, bool is_actionWrite, uli* pDirtyAddress);
 	int get_numCycles() { return numCycles; }
 	double get_missRate();
-	
+
 
 protected:
 	void update_LRU(int setIndex, int wayIndex);
@@ -67,14 +68,14 @@ protected:
 
 	//===//:
 	int level;  //cache L1  or L2  etc..
-	vector<way*> ways;	
+	vector<way*> ways;
 	unsigned int missCount;
 	unsigned int accessCount;
 	int numBlocks_perWay;
 
-//	int* LRU;  //size of LRU:   numBlocks_perWay
-	vector<deque<int>> LRU;
-	
+	//	int* LRU;  //size of LRU:   numBlocks_perWay
+	vector<int_queue> LRU;
+
 };
 
 
@@ -83,4 +84,4 @@ protected:
 
 
 /* Main Functions: */
-int calc_time_and_update(cache* pL1, cache* pL2, uli address, char action, unsigned MemCyc , bool is_writeAllocate);
+int calc_time_and_update(cache* pL1, cache* pL2, uli address, char action, unsigned MemCyc, bool is_writeAllocate);

@@ -4,8 +4,6 @@
 #include <fstream>
 #include <sstream>
 
-#include <math.h>
-
 #include "cache.h"
 
 using std::FILE;
@@ -74,14 +72,10 @@ int main(int argc, char** argv) {
 			return 0;
 		}
 	}
-
+	
 	/*Our Code: START*/
-	cache* pL1 = new cache((int)pow(2, L1Size), (int)pow(2, BSize), (int)pow(2, L1Assoc), L1Cyc, (bool)WrAlloc, 1);
-	cache* pL2 = new cache((int)pow(2, L2Size), (int)pow(2, BSize), (int)pow(2, L2Assoc), L2Cyc, (bool)WrAlloc, 2);
-
-	int crntTimePassed = 0;		//in clk cycles
-	int globalTimePassed = 0;  //in clk cycles
-	int cmnd_count = 0;
+	cache* pL1 = new cache(L1Size, BSize, L1Assoc, MemCyc, WrAlloc);
+	cache* pL2 = new cache(L2Size, BSize, L2Assoc, MemCyc, WrAlloc);
 	/*Our Code: END*/
 
 	while (getline(file, line)) {
@@ -96,34 +90,25 @@ int main(int argc, char** argv) {
 		}
 
 		// DEBUG - remove this line
-		//cout << "operation: " << operation;
+		cout << "operation: " << operation;
 
 		string cutAddress = address.substr(2); // Removing the "0x" part of the address
 
 		// DEBUG - remove this line
-		//cout << ", address (hex)" << cutAddress;
+		cout << ", address (hex)" << cutAddress;
 
 		unsigned long int num = 0;
 		num = strtoul(cutAddress.c_str(), NULL, 16);
 
 		// DEBUG - remove this line
-		//cout << " (dec) " << num << endl;
-
-
-		/*Our Code: START*/
-		crntTimePassed = calc_time_and_update(pL1, pL2, num, operation, MemCyc, WrAlloc);
-		globalTimePassed += crntTimePassed;
-		cmnd_count++;
-		/*Our Code: END*/
+		cout << " (dec) " << num << endl;
 
 	}
 
 	/* Update those: */
-	/*Our Code: START*/
-	double L1MissRate = pL1->get_missRate();
-	double L2MissRate = pL2->get_missRate();
-	double avgAccTime = ((double)globalTimePassed) / ((double)cmnd_count);
-	/*Our Code: END*/
+	double L1MissRate=0;
+	double L2MissRate=0;
+	double avgAccTime=0;
 
 	printf("L1miss=%.03f ", L1MissRate);
 	printf("L2miss=%.03f ", L2MissRate);
