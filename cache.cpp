@@ -91,6 +91,15 @@ void way::write(uli address)
 }
 
 
+void way::snooped_out(uli address, uli setIndex)
+{
+	uli maxVal_ = std::numeric_limits<uli>::max();
+
+	blocks[setIndex] = 0;
+	is_dirty[setIndex] = false;
+	tags[setIndex] = maxVal_;
+	addresses[setIndex] = 0;
+}
 
 
 /*=============================================== cache  ===============================================*/
@@ -132,39 +141,40 @@ cache::cache(int cacheSize_, int blockSize_, int numWays_, int numCycles_, bool 
 
 
 
-bool cache::search_and_update(uli address, bool is_actionWrite, uli* pAddressOfDirtyData)
+bool cache::search_and_update(uli address, bool is_actionWrite, uli* pAddressOfDirtyData , bool is_update)
 {
-	accessCount++;
+	if(is_update) accessCount++;
 
 	uli  setIndex = address2set(address, blockSize, numBlocks_perWay);
 	for (int wayIndex = 0; wayIndex < numWays; wayIndex++)
 	{
 		if (ways[wayIndex]->is_exist(address))
 		{
-			if (is_actionWrite)
+			if (is_actionWrite && is_update)
 			{
 				ways[wayIndex]->write(address);
 			}
 			/*update LRU*/
-			update_LRU(setIndex, wayIndex);
+			if (is_update) update_LRU(setIndex, wayIndex);
 
 			return true;
 		}
 	}
+	if (is_update) {
+		/*Missing block  :  Must update one of the ways, if the new requested block*/
+		missCount++;
 
-	/*Missing block  :  Must update one of the ways, if the new requested block*/
-	missCount++;
+		if (!is_actionWrite || is_writeAllocate)  //Read or write allocate
+		{
 
-	if (!is_actionWrite || is_writeAllocate)  //Read or write allocate
-	{
+			//bool is_dirty = false;
+			int way2update = LRU[setIndex].front();
 
-		//bool is_dirty = false;
-		int way2update = LRU[setIndex].front();
+			ways[way2update]->change_block(address, pAddressOfDirtyData);
+			//is_dirty = ways[way2update]->change_block(address, pAddressOfDirtyData);
+			update_LRU(setIndex, way2update);
 
-		ways[way2update]->change_block(address, pAddressOfDirtyData);
-		//is_dirty = ways[way2update]->change_block(address, pAddressOfDirtyData);
-		update_LRU(setIndex, way2update);
-
+		}
 	}
 	return false;
 }
@@ -211,6 +221,20 @@ void cache::update_LRU(int setIndex, int way2update)
 }
 
 
+void cache::snooped_out(uli address)
+{
+	uli  setIndex = address2set(address, blockSize, numBlocks_perWay);
+	for (int wayIndex = 0; wayIndex < numWays; wayIndex++)
+	{
+		if (ways[wayIndex]->is_exist(address))
+		{
+			
+			ways[wayIndex]->snooped_out(address , setIndex );
+			
+		}
+	}
+}
+
 /*=============================================== Main Functions:  ===============================================*/
 
 int calc_time_and_update(cache* pL1, cache* pL2, uli address, char action_char, unsigned MemCyc, bool is_writeAllocate)
@@ -220,7 +244,7 @@ int calc_time_and_update(cache* pL1, cache* pL2, uli address, char action_char, 
 	uli oldAdress = 0;
 
 	/*Search in L1*/
-	bool is_exist_L1 = pL1->search_and_update(address, is_actionWrite, &oldAdress);
+	bool is_exist_L1 = pL1->search_and_update(address, is_actionWrite, &oldAdress , true);
 	if (is_exist_L1)
 	{
 		return pL1->get_numCycles();
@@ -236,13 +260,22 @@ int calc_time_and_update(cache* pL1, cache* pL2, uli address, char action_char, 
 
 
 		/*Search in L2*/
-		bool is_exist_L2 = pL2->search_and_update(address, is_actionWrite, &oldAdress);
+		bool is_exist_L2 = pL2->search_and_update(address, is_actionWrite, &oldAdress , true);
 		if (is_exist_L2)
 		{
 			return  pL1->get_numCycles() + pL2->get_numCycles();
 		}
 		else
 		{
+			/*Snoop*/
+			bool is_snooped = pL1->search_and_update(oldAdress, is_actionWrite, &oldAdress, false);
+			if (is_snooped)
+			{
+				pL1->snooped_out(oldAdress);
+			}
+
+			/*IRL: if snooped turned out to be "exist", than we should propogate the old data downwards */
+
 			return MemCyc + pL1->get_numCycles() + pL2->get_numCycles();
 		}
 

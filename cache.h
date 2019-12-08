@@ -33,6 +33,7 @@ public:
 	bool change_block(uli address, uli* pOldAddress);  //also return if it was dirty
 	void write(uli address);
 	//uli tag2address(int set);
+	void snooped_out(uli address, uli setIndex);
 
 protected:
 
@@ -51,9 +52,10 @@ class cache {
 
 public:
 	cache(int cacheSize_, int blockSize_, int numWays_, int numCycles_, bool is_writeAllocate_, int level_); //c'tor
-	bool search_and_update(uli address, bool is_actionWrite, uli* pDirtyAddress);
+	bool search_and_update(uli address, bool is_actionWrite, uli* pDirtyAddress, bool is_update);
 	int get_numCycles() { return numCycles; }
 	double get_missRate();
+	void snooped_out(uli address );
 
 
 protected:
