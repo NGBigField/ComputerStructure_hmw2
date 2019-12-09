@@ -35,27 +35,19 @@ way::way(int numBlocks_, int blockSize_)
 {
 	numBlocks = numBlocks_;
 	blockSize = blockSize_;
-
-	blocks = new int[numBlocks];
-	is_dirty = new bool[numBlocks];
-	tags = new uli[numBlocks];
-	addresses = new uli[numBlocks];
-
-
-	//std::numeric_limits<uli> limits;
-	//uli maxVal_ = limits.max();
-	//uli minVal_ = limits.min();
 	uli maxVal_ = std::numeric_limits<uli>::max();
 
+	blocks = new int[numBlocks];
 
-	/*Initialize the arrays*/
 	for (int i = 0; i < numBlocks; i++)
 	{
+		is_dirty.push_back(false);
+		tags.push_back(maxVal_);
+		addresses.push_back(maxVal_);
 		blocks[i] = 0;
-		is_dirty[i] = false;
-		tags[i] = maxVal_;
-		addresses[i] = 0;
 	}
+
+
 
 }
 
@@ -98,8 +90,9 @@ void way::snooped_out(uli address, uli setIndex)
 	blocks[setIndex] = 0;
 	is_dirty[setIndex] = false;
 	tags[setIndex] = maxVal_;
-	addresses[setIndex] = 0;
+	addresses[setIndex] = maxVal_;
 }
+
 
 
 /*=============================================== cache  ===============================================*/
@@ -156,6 +149,7 @@ bool cache::search_and_update(uli address, bool is_actionWrite, uli* pAddressOfD
 			}
 			/*update LRU*/
 			if (is_update) update_LRU(setIndex, wayIndex);
+			*pAddressOfDirtyData =  ways[wayIndex]->get_address(setIndex);
 
 			return true;
 		}
@@ -263,12 +257,14 @@ int calc_time_and_update(cache* pL1, cache* pL2, uli address, char action_char, 
 		bool is_exist_L2 = pL2->search_and_update(address, is_actionWrite, &oldAdress , true);
 		if (is_exist_L2)
 		{
+			
 			return  pL1->get_numCycles() + pL2->get_numCycles();
 		}
 		else
 		{
-			/*Snoop*/
-			bool is_snooped = pL1->search_and_update(oldAdress, is_actionWrite, &oldAdress, false);
+			/*Snoop - why here? we need to snoop only if the address exists in L2*/
+			uli snoopedAdress = 0;
+			bool is_snooped = pL1->search_and_update(oldAdress, is_actionWrite, &snoopedAdress, false);
 			if (is_snooped)
 			{
 				pL1->snooped_out(oldAdress);

@@ -34,6 +34,7 @@ public:
 	void write(uli address);
 	//uli tag2address(int set);
 	void snooped_out(uli address, uli setIndex);
+	uli get_address(uli setIndex) { return addresses[setIndex]; }
 
 protected:
 
@@ -41,9 +42,9 @@ protected:
 	int blockSize;
 
 	int* blocks;
-	bool* is_dirty;
-	unsigned long int* tags;
-	uli* addresses;
+	vector<bool> is_dirty;
+	vector<uli> tags;
+	vector<uli> addresses;
 };
 
 
