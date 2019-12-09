@@ -30,7 +30,7 @@ class way {
 public:
 	way(int numBlocks, int blockSize); //c'tor
 	bool is_exist(uli address);
-	bool change_block(uli address, uli* pOldAddress);  //also return if it was dirty
+	bool change_block(uli address, uli* pOldAddress , bool is_actionWrite);  //also return if it was dirty
 	void write(uli address);
 	//uli tag2address(int set);
 	void snooped_out(uli address, uli setIndex);
@@ -53,10 +53,11 @@ class cache {
 
 public:
 	cache(int cacheSize_, int blockSize_, int numWays_, int numCycles_, bool is_writeAllocate_, int level_); //c'tor
-	bool search_and_update(uli address, bool is_actionWrite, uli* pDirtyAddress, bool is_update);
+	bool search_and_update(uli address, bool is_actionWrite, uli* pDirtyAddress, bool is_update , bool* pWas_dirty);
 	int get_numCycles() { return numCycles; }
 	double get_missRate();
 	void snooped_out(uli address );
+	void update_dirty_in_crnt_level(uli oldAddress);
 
 
 protected:
